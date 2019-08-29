@@ -148,8 +148,9 @@ module Skylight
                 description: #{desc_inspect})
 
               begin
-                send(:before_instrument_#{name}, *args, &blk)
+                ret = send(:before_instrument_#{name}, *args, &blk)
                 Skylight.done(span) if span
+                ret
               rescue Exception => e
                 Skylight.done(span, { exception_object: e }) if span
                 raise e
