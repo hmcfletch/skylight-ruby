@@ -135,23 +135,24 @@ module Skylight
           title    = (opts[:title] || title).to_s
           desc     = opts[:description].to_s if opts[:description]
 
+          title_inspect = title.inspect.freeze
+          desc_inspect = desc.inspect.freeze
+
           klass.class_eval <<-RUBY, __FILE__, __LINE__ + 1
             alias_method :"before_instrument_#{name}", :"#{name}"
 
             def #{name}(*args, &blk)
               span = Skylight.instrument(
                 category:  :"#{category}",
-                title:       #{title.inspect},
-                description: #{desc.inspect})
+                title:       #{title_inspect},
+                description: #{desc_inspect})
 
-              meta = {}
               begin
                 send(:before_instrument_#{name}, *args, &blk)
+                Skylight.done(span) if span
               rescue Exception => e
-                meta[:exception_object] = e
+                Skylight.done(span, { exception_object: e }) if span
                 raise e
-              ensure
-                Skylight.done(span, meta) if span
               end
             end
           RUBY
